@@ -23,7 +23,7 @@ mean_mandible <- mean(mandible)
 
 
 # Trait-based attack rates using Gaussian trait matching
-beta <- 5
+beta <- 10
 a0 <- 0.2
 T <- .05 * n_plants  # ensures total attack rate matches a generalist's base rate
 
@@ -49,7 +49,7 @@ sum(A)
 # Fixed parameters
 R <- rep(2, n_plants)
 C <- matrix(0.0, nrow = n_plants, ncol = n_plants); diag(C) <- 0.04
-HNDL <- matrix(runif(n_plants * n_herbs, 0, 0), nrow = n_plants)
+HNDL <- matrix(runif(n_plants * n_herbs, 0.0, 0.0), nrow = n_plants)
 E <- matrix(runif(n_plants * n_herbs, 0.1, 0.1), nrow = n_plants)
 M <- rep(1, n_herbs)
 g <- rep(0.00, n_herbs)  # herbivore self-limitation rate
@@ -58,7 +58,7 @@ g <- rep(0.00, n_herbs)  # herbivore self-limitation rate
 state <- c(P = rep(15, n_plants), H = rep(3, n_herbs))
 # state <- c(P = rep(15, n_plants), H = c(3,0,0,0,0,0,0,0,0,3))
 
-times <- seq(0, 100, by = .1)
+times <- seq(0, 1000, by = .1)
 
 # Model function
 competition_model <- function(time, state, parameters) {
@@ -100,6 +100,18 @@ out_long <- out_df %>%
          species=as_factor(species),
          spp=factor(species, levels=mixedsort(levels(species))))
 
+# check equilibrium #
+# Check last 10 time points for stability
+tail(out_df, 10)
+
+# Or more targeted: check the range of change in the final window
+final_window <- tail(out_df, 100)   # last 100 time points
+
+# Max absolute change across all species in the final window
+max_change <- apply(final_window[, -1], 2, function(x) abs(diff(range(x))))
+cat("Max change in final window:\n")
+print(round(sort(max_change, decreasing = TRUE)[1:10], 6))  # top 10 most variable
+
 ## make plot ####
 pop1 <- ggplot(data=out_long %>% filter(type=="Plant"), aes(x = time, y = value, color = spp)) +
   geom_line(linewidth = 1.2) +
@@ -108,7 +120,7 @@ pop1 <- ggplot(data=out_long %>% filter(type=="Plant"), aes(x = time, y = value,
        x = "Time",
        y = "Plant biomass (g/m2)",
        color="Plant spp") +
-  ylim(0,30)+
+  ylim(0,32)+xlim(0,200)+
   theme_bw(base_size = 16)+
   theme(legend.position = "none")
 
@@ -120,7 +132,7 @@ pop2 <- ggplot(data=out_long %>% filter(type=="Herbivore"),
        x = "Time",
        y = "Herbivore density (#/m2)",
        color="Herbivore spp") +
-  ylim(0,13)+
+  ylim(0,13)+xlim(0,200)+
   theme_bw(base_size = 16)+
   theme(legend.position = "none")
 
@@ -343,7 +355,7 @@ parms_fixed <- list(
   HNDL = matrix(0,   n_plants, n_herbs),
   E    = matrix(0.1, n_plants, n_herbs),
   M    = rep(1,   n_herbs),
-  g    = rep(0.001, n_herbs)
+  g    = rep(0.01, n_herbs)
 )
 
 # Compute conversion factors from A matrix [1]
@@ -447,7 +459,7 @@ C <- matrix(0.0, nrow = n_plants, ncol = n_plants); diag(C) <- 0.04
 HNDL <- matrix(runif(n_plants * n_herbs, 0, 0), nrow = n_plants)
 E <- matrix(runif(n_plants * n_herbs, 0.1, 0.1), nrow = n_plants)
 M <- rep(1, n_herbs)
-g <- rep(0.01, n_herbs)  # include a small herbivore self-limitation rate
+g <- rep(0.00, n_herbs)  # include a small herbivore self-limitation rate
 
 # Initial state
 state <- c(P = rep(15, n_plants), H = rep(3, n_herbs))
@@ -502,7 +514,7 @@ pop1a <- ggplot(data=out_long %>% filter(type=="Plant"), aes(x = time, y = value
     x = "Time",
     y = "Plant biomass (g/m2)",
     color="Plant spp") +
-  ylim(0,30)+
+  ylim(0,32)+
   theme_bw(base_size = 16)
 
 pop2a <- ggplot(data=out_long %>% filter(type=="Herbivore"), 
@@ -513,7 +525,7 @@ pop2a <- ggplot(data=out_long %>% filter(type=="Herbivore"),
        x = "Time",
        y = "Herbivore density (#/m2)",
        color="Herbivore spp") +
-  ylim(0,13)+
+  ylim(0,25)+
   theme_bw(base_size = 16)
 
 popplota <- pop2a/pop1a
@@ -733,7 +745,7 @@ parms_fixed <- list(
   HNDL = matrix(0,   n_plants, n_herbs),
   E    = matrix(0.1, n_plants, n_herbs),
   M    = rep(1,   n_herbs),
-  g    = rep(0.001, n_herbs)
+  g    = rep(0.01, n_herbs)
 )
 
 # Compute conversion factors from A matrix [1]
@@ -800,7 +812,7 @@ NF_plot <- NF_plot_traitmatch+NF_plot_strongmand #+ plot_layout(guides="collect"
 
 # Matching vs strong mandibles plot ####
 MatchStrongPlot <- popplot|popplota
-ggsave(MatchStrongPlot, file="Fig_1_MatchStrongPlot.tiff", width=10, height=6, dpi=300, compression = "lzw")
+ggsave(MatchStrongPlot, file="Fig_1_MatchStrongPlot.tiff", width=10, height=6.5, dpi=300, compression = "lzw")
 
 MCR_plot <- (popplot|popplota)/NF_plot +
   plot_layout(heights = c(2,1))
@@ -1205,7 +1217,7 @@ C <- matrix(0.0, nrow = n_plants, ncol = n_plants); diag(C) <- 0.04
 HNDL <- matrix(0, nrow = n_plants, ncol = n_herbs)
 E <- matrix(0.1, nrow = n_plants, ncol = n_herbs)
 M <- rep(1, n_herbs)
-g <- rep(0.00, n_herbs)
+g <- rep(0.01, n_herbs)
 
 # Lower initial state
 state <- c(P = rep(15, n_plants), H = rep(0, n_herbs))
@@ -1382,7 +1394,7 @@ resultsfd$SES_toughness <- BV_SEStab$SES_BV
 
 ### FD SES Plots ####
 pcwm1 <- ggplot(resultsfd, aes(x = R1+2, y = cwm_ldmc)) +
-  geom_line(size = 1.5, color = "darkgreen") +
+  geom_line(linewidth = 1.5, color = "darkgreen") +
   labs(
     #title = "Herbivore community metrics across R1",
     x = "Instrinsic Growth Rate of P1 (R1)",
@@ -1390,8 +1402,8 @@ pcwm1 <- ggplot(resultsfd, aes(x = R1+2, y = cwm_ldmc)) +
   #ylim(2.75,4.75)+
   theme_bw(base_size = 16)
 
-pfd1 <- ggplot(resultsfd, aes(x = R1, y = fdis_toughness)) +
-  geom_line(size = 1.2, color = "#cf4446") +
+pfd1 <- ggplpfd1 <- ggplpfd1 <- ggplot(resultsfd, aes(x = R1, y = fdis_toughness)) +
+  geom_line(linewidth = 1.2, color = "#cf4446") +
   labs(
     #title = "Functional Dispersion of Mandible Strength Across R1",
     x = "Growth Rate of P7:P10\n(Plant Community LDMC)",
@@ -1494,7 +1506,7 @@ comm1 <- ggplot(data=results_long %>% filter(type=="Plant"), aes(x = R1+2, y = a
        color="Plant spp") +
   theme_bw(base_size = 16)+
   theme(legend.position = "top")+
-  annotate("text", x = 1.1, y = 26, label = "A")+
+  annotate("text", x = 1, y = 25, label = "A")+
   guides(color=guide_legend(title.position = "top", title.hjust=0.5))
 
 comm2 <- ggplot(data=results_long %>% filter(type=="Herbivore"), 
@@ -1502,12 +1514,12 @@ comm2 <- ggplot(data=results_long %>% filter(type=="Herbivore"),
   geom_line(linewidth = 1.2) +
   scale_color_viridis(option="inferno", discrete=T, direction=-1, begin=.2, end=.8) +
   labs(#subtitle = "B",
-       x = "CWM LDMC w/ no herbivores",
+       x = "Underlying CWM LDMC gradient\n(with no herbivores)",
        y = "Abundance at t = 100",
        color="Herbivore spp") +
   theme_bw(base_size = 16)+
   theme(legend.position = "top") +
-  annotate("text", x = 37.5, y = 22, label = "B")+
+  annotate("text", x = 37, y = 22, label = "B")+
   guides(color=guide_legend(title.position = "top", title.hjust=0.5))
 
 comm12 <- comm1/comm2
@@ -1634,20 +1646,20 @@ resultsfd$SES_toughness <- BV_SEStab$SES_BV
 resultsfd <- full_join(resultsfd,R1_cwm)
 
 cwm1 <- ggplot(resultsfd, aes(x = cwm_ldmc, y = cwm_mandible)) +
-  geom_line(size = 1.2, color = "#cf4446") +
+  geom_line(size = 1.5, color = "#cf4446") +
   labs(
     #title = "Herbivore community metrics across R1",
-    x = "CWM LDCM w/ no herbivores",
+    x = "Underlying CWM LDMC gradient\n(with no herbivores)",
     y = "CWM Mandible Strength") +
-  ylim(2.4,4.75)+
+  ylim(2.4,4.5)+
   annotate("text", x = 37, y = Inf, label = "C", vjust = 1.5)+
   theme_bw(base_size = 16)
 
 fd1 <- ggplot(resultsfd, aes(x = cwm_ldmc, y = fdis_mandible)) +
-  geom_line(size = 1.2, color = "#cf4446") +
+  geom_line(size = 1.5, color = "#cf4446") +
   labs(
     #title = "Functional Dispersion of Mandible Strength Across R1",
-    x = "CWM LDCM w/ no herbivores",
+    x = "Underlying CWM LDMC gradient\n(with no herbivores)",
     y = "FD Mandible Strength"
   ) +
   annotate("text", x = 37, y = Inf, label = "D", vjust = 1.5)+
@@ -1655,20 +1667,20 @@ fd1 <- ggplot(resultsfd, aes(x = cwm_ldmc, y = fdis_mandible)) +
 
 ses1 <- ggplot(resultsfd, aes(x = cwm_ldmc, y = SES_Mandible)) +
   geom_hline(aes(yintercept=0), color="grey", linetype="dashed", lwd=1.5)+
-  geom_line(size = 1.2, color = "#cf4446") +
+  geom_line(size = 1.5, color = "#cf4446") +
   labs(
     #title = "Functional Dispersion of Mandible Strength Across R1",
-    x = "CWM LDCM w/ no herbivores",
+    x = "Underlying CWM LDMC gradient\n(with no herbivores)",
     y = "SES Mandible Strength"
   ) +
-  ylim(-3,3)+
+  ylim(-3,3.1)+
   annotate("text", x = 37, y = Inf, label = "E", vjust = 1.5)+
   theme_bw(base_size = 16)
 
 commplot <- free(comm1/comm2)|(cwm1/fd1/ses1) + 
   plot_layout(guides="collect", axes="collect")
 
-ggsave(commplot, file="Fig_2_TraitMatchingPlot.tiff", width=10, height=8, dpi=300, compression = "lzw")
+ggsave(commplot, file="Fig_2_TraitMatchingPlot.tiff", width=10, height=9, dpi=300, compression = "lzw")
 
 
 
@@ -1702,7 +1714,7 @@ C <- matrix(0.0, nrow = n_plants, ncol = n_plants); diag(C) <- 0.04
 HNDL <- matrix(runif(n_plants * n_herbs, 0, 0), nrow = n_plants)
 E <- matrix(runif(n_plants * n_herbs, 0.1, 0.1), nrow = n_plants)
 M <- rep(1, n_herbs)
-g <- rep(0.01, n_herbs)  # herbivore self-limitation rate
+g <- rep(0.00, n_herbs)  # herbivore self-limitation rate
 
 # Initial state
 state <- c(P = rep(15, n_plants), H = rep(3, n_herbs))
@@ -1992,17 +2004,17 @@ make_R_gradient <- function(R_low, R_high, n = 10) {
 
 scenarios <- list(
   scenario1 = list(
-    name  = "Soft plant community\n(R1=3, R10=1)",
+    name  = "A) Low LDMC community\n(R1=3, R10=1)",
     R_vec = make_R_gradient(3.0, 1.0),
     color = "#35b779"
   ),
   scenario2 = list(
-    name  = "Null community\n(R1=2, R10=2)",
+    name  = "B) Intermediate LDMC community\n(R1=2, R10=2)",
     R_vec = make_R_gradient(2.0, 2.0),
     color = "#808080"
   ),
   scenario3 = list(
-    name  = "Tough plant community\n(R1=1, R10=3)",
+    name  = "C) High LDMC community\n(R1=1, R10=3)",
     R_vec = make_R_gradient(1.0, 3.0),
     color = "#d44842"
   )
@@ -2020,10 +2032,10 @@ parms_base <- list(
   HNDL     = matrix(0,   n_plants, n_herbs),
   E        = matrix(0.1, n_plants, n_herbs),
   M        = rep(1,   n_herbs),
-  g        = rep(0.001, n_herbs)
+  g        = rep(0.00, n_herbs)
 )
 
-times_long  <- seq(0, 1000, by = 0.5)
+times_long  <- seq(0, 200, by = 0.5)
 times_short <- seq(0, 10,   by = 0.1)
 
 # ── Run Spaak N and F for each scenario ──────────────────────────────────────
@@ -2102,7 +2114,7 @@ p_NF <- ggplot(all_results, aes(x = N, y = F_2021,
   #scale_fill_viridis(option="inferno", discrete=T, direction=-1, begin=.2, end=.8) +
   scale_shape_manual(values = c("TRUE" = 16, "FALSE" = 4),
                      labels = c("Excluded", "Persists")) +
-  coord_cartesian(ylim = c(-.01, .12), xlim=c(-.01, .1)) +
+  coord_cartesian(ylim = c(-.01, .1), xlim=c(-.01, .1)) +
   facet_wrap(~scenario, ncol = 3) +
   labs(x = "Niche difference (N)",
        y = "Fitness difference (F)",
@@ -2115,7 +2127,7 @@ p_NF <- ggplot(all_results, aes(x = N, y = F_2021,
 p_NF
 
 ggsave("Fig_3_p_NF.png", p_NF,
-       width = 12, height = 4, dpi = 300)
+       width = 13, height = 4.75, dpi = 300)
 
 # ── Plot 2: Number of persisting species per scenario ─────────────────────────
 persist_summary <- all_results %>%
