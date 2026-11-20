@@ -2107,9 +2107,7 @@ p_NF <- ggplot(all_results, aes(x = N, y = F_2021,
   #          size = 3.5, show.legend = FALSE) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey50") +
   geom_vline(xintercept = 0, linetype = "dashed", color = "grey50") +
-  stat_function(fun = function(x) x / (1 - x),
-                color = "black", linetype = "dashed", linewidth=2,
-                xlim = c(-0.5, 0.95)) +
+  geom_abline(slope = 1,intercept = 0,color = "black",linetype = "dashed",linewidth = 1.5)+
   scale_color_viridis(option="inferno", discrete=T, direction=-1, begin=.2, end=.8) +
   #scale_fill_viridis(option="inferno", discrete=T, direction=-1, begin=.2, end=.8) +
   scale_shape_manual(values = c("TRUE" = 16, "FALSE" = 4),
